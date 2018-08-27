@@ -94,8 +94,10 @@ class RNNLM(nn.Module):
                     hidden_outputs.append(hidden_output)
                 hidden_outputs = pack_padded_sequence(torch.stack(hidden_outputs), sent_lens)
         elif (self.use_rnn_only):
+            #emb = pack_padded_sequence(emb, sent_lens)
+            #hidden_outputs, hidden = self.rnnlayer(emb, hidden)
             emb = pack_padded_sequence(emb, sent_lens)
-            hidden_outputs, hidden = self.rnnlayer(emb, hidden)
+            hidden = self.rnnlayer(emb)
         else:
             emb = pack_padded_sequence(emb, sent_lens)
             hidden_outputs, hidden = self.rnnlayer(emb, hidden)
