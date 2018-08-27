@@ -36,7 +36,7 @@ class RNNLM(nn.Module):
             else:
                 self.rnnlayer = nn.LSTMCell(emb_size, hidden_size)
         elif (self.use_rnn_only):
-            self.rnnlayer = nn.RNN(emb_size, hidden_size)
+            self.rnnlayer = F.sigmoid(nn.Linear(emb_size, hidden_size))
         else:
             self.rnnlayer = nn.LSTM(emb_size, hidden_size, self.num_layer, dropout=self.droprate)
         
