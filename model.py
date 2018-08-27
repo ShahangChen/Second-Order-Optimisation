@@ -6,7 +6,7 @@ from device import device
 from torch.nn.utils.rnn import pad_packed_sequence, pack_padded_sequence
 
 class RNNLM(nn.Module):
-    def __init__ (self, emb_size, hidden_size, num_layer, minibatch, vocsize, droprate, noiseprob, nce=False, ncesample=1000, lognormconst=9.0, use_cell=True, use_rnn=False):
+    def __init__ (self, emb_size, hidden_size, num_layer, minibatch, vocsize, droprate, noiseprob, nce=False, ncesample=1000, lognormconst=9.0, use_cell=True, use_rnn=False, use_rnn_only=False):
         super(RNNLM, self).__init__()
         self.emb_size = emb_size
         self.hidden_size = hidden_size
@@ -16,6 +16,7 @@ class RNNLM(nn.Module):
         self.droprate = droprate
         self.use_cell = use_cell
         self.use_rnn = use_rnn
+        self.use_rnn_only = use_rnn_only
         self.nce = nce
         if self.nce is True:
             self.ce = False
@@ -27,13 +28,18 @@ class RNNLM(nn.Module):
 
         self.dropout = nn.Dropout(self.droprate)
         self.emblayer = nn.Embedding(vocsize, emb_size)
+        
+        # Define model layer
         if (self.use_cell):
             if (self.use_rnn):
                 self.rnnlayer = nn.RNNCell(emb_size, hidden_size)
             else:
                 self.rnnlayer = nn.LSTMCell(emb_size, hidden_size)
+        elif (self.use_rnn_only):
+            self.rnnlayer = nn.RNN(emb_size, hidden_size)
         else:
             self.rnnlayer = nn.LSTM(emb_size, hidden_size, self.num_layer, dropout=self.droprate)
+        
         self.outlayer = nn.Linear(hidden_size, self.vocsize)
 
         self.weight = nn.Parameter(torch.Tensor(self.vocsize, self.hidden_size))
@@ -58,6 +64,8 @@ class RNNLM(nn.Module):
         weight = next(self.parameters()).data
         if (self.use_cell):
             hidden = weight.new_zeros([minibatch, self.hidden_size])
+        elif (self.use_rnn_only):
+            hidden = weight.new_zeros([1, minibatch, self.hidden_size])
         else:
             hidden = (weight.new_zeros([1, minibatch, self.hidden_size]),
                        weight.new_zeros([1, minibatch, self.hidden_size]))
@@ -85,6 +93,9 @@ class RNNLM(nn.Module):
                     hidden_output, hidden = self.rnnlayer(x, (hidden_output, hidden))
                     hidden_outputs.append(hidden_output)
                 hidden_outputs = pack_padded_sequence(torch.stack(hidden_outputs), sent_lens)
+        elif (self.use_rnn_only):
+            emb = pack_padded_sequence(emb, sent_lens)
+            hidden_outputs, hidden = self.rnnlayer(emb, hidden)
         else:
             emb = pack_padded_sequence(emb, sent_lens)
             hidden_outputs, hidden = self.rnnlayer(emb, hidden)
