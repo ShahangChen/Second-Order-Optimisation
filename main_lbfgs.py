@@ -57,7 +57,8 @@ parser.add_argument('--nnlm',     action='store_true',        help='lstm LM mode
 
 # Add history initial per sentence
 parser.add_argument('--use_cell',   action='store_true',       help='history initial per sentence')
-parser.add_argument('--use_rnn',   action='store_true',       help='use sigmoid rnn')
+parser.add_argument('--use_rnn',   action='store_true',       help='use sigmoid rnnCell')
+parser.add_argument('--use_rnn_only',   action='store_true',       help='use sigmoid rnn')
 parser.add_argument('--use_adam',  action='store_true',       help='use lbfgs with adam')
 args = parser.parse_args()
 
@@ -101,7 +102,7 @@ if not args.nnlm:
     memodel = maxentmodel.MaxEntLM_FeaAsKea(MEFeaExtractor, vocsize, args.minibatch)
 
 if not args.maxent:
-    model = model.RNNLM(args.embsize, args.hiddensize, args.nhidden, args.minibatch, vocsize, args.dropout, corpus.wordfreq, args.nce, args.ncesample, args.lognorm, args.use_cell, args.use_rnn)
+    model = model.RNNLM(args.embsize, args.hiddensize, args.nhidden, args.minibatch, vocsize, args.dropout, corpus.wordfreq, args.nce, args.ncesample, args.lognorm, args.use_cell, args.use_rnn, args.use_rnn_only)
     model.to(device)
     noisesampler = unigram.unigramsampler(corpus.wordfreq)
     
